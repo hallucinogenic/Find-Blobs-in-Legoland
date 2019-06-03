@@ -16,11 +16,23 @@
 #include "include/struct.c"
 #include "include/custom_functions.c"
 
-int main(int argc, char *argv[])
-{
-    int colors_aux[3] = {0, 0, 0}; // Variável auxiliar para guardar as cores que pretendemos procurar;
-    int tolerancia = 0; // Variável auxiliar para guardar a tolerância das cores RGB;
 
+int *blob = NULL; // Array Auxiliar que será para armazenar as informações dos BLOBS;
+
+
+int main(int argc, char *argv[])
+{   
+    /*
+        O input está definido da seguinte maneira:
+        ./find-blobs RED GREEN BLUE TOLERANCIA ficheiro.txt
+
+            - RED é o valor desejado que representa o R de RGB
+            - GREEN é o valor desejado que representa o G de RGB
+            - BLUE é o valor desejado que representa o B  de RGB
+            - TOLERANCIA é o valor desejado que representa a tolerancia a procurar à volta dos pixeis
+            - ficheiro.txt o ficheiro formatado de acordo de modo a obter o output desejado
+    */
+    int colors_aux[3] = {0, 0, 0};  // Variável auxiliar para guardar as cores que pretendemos procurar;
     /*
         Variável para guardar os valores das cores, com a respetiva tolerância;
             - colors[0][0] -> Cor Mínima do valor Vermelho RGB;
@@ -31,27 +43,25 @@ int main(int argc, char *argv[])
             - colors[2][1] -> Cor Máxima do valor Azul RGB;
     */
     int **colors = NULL;
-
-    char nome_ficheiro[9] = "imgs.txt"; // Nome do ficheiro default, caso não se utilize um nos argumentos;
-
-    // Caso ao executar o programa, possua o "-debug", será ativado o debugging do programa;
-    if((argc > 2) && (strcmp(argv[2], "-debug") == 0))
-        DEBUG = 1;
     
+    char nome_ficheiro[9] = "imgs.txt"; // Nome do ficheiro default, caso não se utilize um nos argumentos;
     FILE *f = NULL; // Ficheiro que pretendemos pesquisar os píxeis;
-
+    FILE *fout = NULL; // Ficheiro de logging;
     // Caso o nome do ficheiro não esteja inserido no 2º argumento do programa, será usado o default;
 
-    f = fopen((argc > 1)?argv[1]:nome_ficheiro, "r");
-    
+    f = fopen((argc > 5)?argv[5]:nome_ficheiro, "r");
+    char *output_log = strcat(argv[5], "_log");
+    fout = fopen(output_log, "w+");
     // Caso o ficheiro não exista (ou por engano, escrever "-debug" no 2º argumento, o programa termina, dizendo que houve um erro);
     if(f == NULL)
-    {
-        if(DEBUG)
-            printf("Erro de leitura no ficheiro!\n");
-        
+    { 
+        printf("Erro de leitura no ficheiro!\n");
         return 0;
     }
+    int tolerancia = atoi(argv[4]);
+    colors_aux[0] = atoi(argv[1]);
+    colors_aux[1] = atoi(argv[2]);
+    colors_aux[2] = atoi(argv[3]);
 
 
     /*
@@ -62,50 +72,13 @@ int main(int argc, char *argv[])
                 - Caso seja igual a 0, vai ser procurado o píxel exato;
                 - Caso seja menor que 0, será pedido ao utilizador para escrever outra vez;
     */
-
-    printf("Insere o tom Vermelho RGB que pretendes procurar: ");
-    scanf("%d", &colors_aux[0]);
-
-    while(colors_aux[0] < 0 || colors_aux[0] > 255)
-    {
-        printf("O valor %d é %s! Insere novamente: ", colors_aux[0], (colors_aux[0] < 0)?"menor que 0":"maior que 255");
-        scanf("%d", &colors_aux[0]);
-    }
-
-    printf("Insere o tom Verde RGB que pretendes procurar: ");
-    scanf("%d", &colors_aux[1]);
-
-    while(colors_aux[1] < 0 || colors_aux[1] > 255)
-    {
-        printf("O valor %d é %s! Insere novamente: ", colors_aux[1], (colors_aux[1] < 0)?"menor que 0":"maior que 255");
-        scanf("%d", &colors_aux[1]);
-    }
-    
-    printf("Insere o tom Azul RGB que pretendes procurar: ");
-    scanf("%d", &colors_aux[2]);
-
-    while(colors_aux[2] < 0 || colors_aux[2] > 255)
-    {
-        printf("O valor %d é %s! Insere novamente: ", colors_aux[2], (colors_aux[2] < 0)?"menor que 0":"maior que 255");
-        scanf("%d", &colors_aux[2]);
-    }
-
-    printf("Insere a tolerância que pretendes nas cores: ");
-    scanf("%d", &tolerancia);
-
-    while(tolerancia < 0)
-    {
-        printf("O valor %d é menor que 0! Insere novamente: ", tolerancia);
-        scanf("%d", &tolerancia);
-    }
-
+ 
     // Após sabermos as cores e a tolerância, vamos calcular o valor mínimo e máximo de cada cor, de acordo com a tolerância;
     colors = IntervaloTolerancia(colors_aux, tolerancia);
 
-    if(DEBUG)
-        printf("Cores:\nVermelho: [%d, %d]\nVerde: [%d, %d]\nAzul: [%d, %d]\n", colors[0][0], colors[0][1], colors[1][0], colors[1][1], colors[2][0], colors[2][1]);
+    fprintf(fout, "Vermelho: [%d, %d]\nVerde: [%d, %d]\nAzul: [%d, %d]\n", colors[0][0], colors[0][1], colors[1][0], colors[1][1], colors[2][0], colors[2][1]);
 
-
+    DEBUG = 1;
 
     char nome_imagem[256] = {0}; // Nome da Imagem que será pesquisada;
     char buffer_dimensoes[256] = {0}; // String auxiliar para armazenar as dimensões da imagem;
@@ -125,8 +98,6 @@ int main(int argc, char *argv[])
     Pixel **P = NULL; // Matriz em que vai ser armazenada o número de píxeis totais. Declarada como NULL para não haver lixo;
 
     char RGB[100] = {0}; // String auxiliar, para ler todas as linhas do ficheiro em que se encontram as cores dos píxeis;
-
-    int * blob = NULL; // Array Auxiliar que será para armazenar as informações dos BLOBS;
 
     Pesquisa *Pesq = NULL; // Cabeça da Lista que foi armazenada as informações;
     Pesquisa *Pnovo = NULL; // Elemento que vai ser adicionado à lista;
@@ -219,10 +190,10 @@ int main(int argc, char *argv[])
     }
 
     // Agora que a pesquisa foi feita com sucesso
-    int contador_blobs = imprimirPesquisas(Pesq);
+    int contador_blobs = imprimirPesquisas(fout, Pesq);
 
     if(contador_blobs)
-        printf("Foram encontrados %d BLOBs com o devido intervalo RGB\n", contador_blobs);
+        fprintf(fout, "Foram encontrados %d BLOBs com o devido intervalo RGB\n", contador_blobs);
 
     // Como é óbvio, após terminarmos com o ficheiro texto, vamos fechá-lo;
     fclose(f);
