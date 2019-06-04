@@ -1,9 +1,11 @@
 GCCBUILD := gcc -Wall main.c
 
+MKDIRBIN := mkdir ../growler/bin/
 # ============
 # INSTALLATION
 # ============
 
 build:
-	$(GCCBUILD) -o find-blobs
+	$(MKDIRBIN)
+	$(GCCBUILD) -o ../growler/bin/find-blobs
 
